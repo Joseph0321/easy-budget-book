@@ -1,0 +1,136 @@
+<template>
+  <div class="statistics">
+    <el-card>
+      <template #header>
+        <div class="header-toolbar">
+          <h2>통계</h2>
+          <el-date-picker
+            v-model="selectedYear"
+            type="year"
+            placeholder="년도 선택"
+            @change="loadStatistics"
+          />
+        </div>
+      </template>
+
+      <el-row :gutter="20">
+        <!-- 월별 수입/지출 막대 차트 -->
+        <el-col :span="24">
+          <el-card class="chart-card">
+            <template #header>
+              <h3>월별 수입/지출</h3>
+            </template>
+            <MonthlyBarChart :chart-data="monthlyChartData" />
+          </el-card>
+        </el-col>
+
+        <!-- 카테고리별 수입 파이 차트 -->
+        <el-col :span="12">
+          <el-card class="chart-card">
+            <template #header>
+              <h3>카테고리별 수입</h3>
+            </template>
+            <CategoryPieChart 
+              :chart-data="incomePieData"
+              chart-type="income"
+            />
+          </el-card>
+        </el-col>
+
+        <!-- 카테고리별 지출 파이 차트 -->
+        <el-col :span="12">
+          <el-card class="chart-card">
+            <template #header>
+              <h3>카테고리별 지출</h3>
+            </template>
+            <CategoryPieChart 
+              :chart-data="expensePieData"
+              chart-type="expense"
+            />
+          </el-card>
+        </el-col>
+      </el-row>
+    </el-card>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import statisticsService from '@/services/statisticsService';
+import MonthlyBarChart from '@/components/MonthlyBarChart.vue';
+import CategoryPieChart from '@/components/CategoryPieChart.vue';
+import dayjs from 'dayjs';
+
+const selectedYear = ref(new Date());
+const monthlyChartData = ref(null);
+const incomePieData = ref(null);
+const expensePieData = ref(null);
+
+const loadStatistics = async () => {
+  try {
+    const year = dayjs(selectedYear.value).year();
+    
+    // 월별 통계
+    const monthlyRes = await statisticsService.getMonthlyStats(year);
+    monthlyChartData.value = {
+      labels: ['1월', '2월', '3월', '4월', '5월', '6월', 
+               '7월', '8월', '9월', '10월', '11월', '12월'],
+      datasets: [
+        {
+          label: '수입',
+          data: monthlyRes.data.income,
+          backgroundColor: '#67C23A'
+        },
+        {
+          label: '지출',
+          data: monthlyRes.data.expense,
+          backgroundColor: '#F56C6C'
+        }
+      ]
+    };
+    
+    // 카테고리별 통계
+    const startDate = `${year}-01-01`;
+    const endDate = `${year}-12-31`;
+    
+    const incomeRes = await statisticsService.getCategoryStats(
+      startDate, endDate, 'INCOME'
+    );
+    incomePieData.value = {
+      labels: incomeRes.data.map(item => item.categoryName),
+      datasets: [{
+        data: incomeRes.data.map(item => item.amount),
+        backgroundColor: [
+          '#67C23A', '#85CE61', '#A4DA89', '#C3E6B1', '#E1F3D9'
+        ]
+      }]
+    };
+    
+    const expenseRes = await statisticsService.getCategoryStats(
+      startDate, endDate, 'EXPENSE'
+    );
+    expensePieData.value = {
+      labels: expenseRes.data.map(item => item.categoryName),
+      datasets: [{
+        data: expenseRes.data.map(item => item.amount),
+        backgroundColor: [
+          '#F56C6C', '#F78989', '#F9A7A7', '#FBC4C4', '#FDE2E2'
+        ]
+      }]
+    };
+  } catch (error) {
+    console.error('통계 데이터 로딩 실패:', error);
+  }
+};
+
+onMounted(() => {
+  loadStatistics();
+});
+</script>
+
+<style scoped>
+.chart-card {
+  margin-bottom: 20px;
+  min-height: 400px;
+}
+</style>

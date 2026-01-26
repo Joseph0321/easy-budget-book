@@ -1,0 +1,132 @@
+package com.budget.easybook.expense.repository;
+
+import com.budget.easybook.expense.entity.Expense;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ExpenseRepository extends JpaRepository<Expense, Long> {
+    
+    /**
+     * Find all expenses for a user with pagination
+     */
+    @Query("SELECT e FROM Expense e WHERE e.user.userId = :userId ORDER BY e.expenseDate DESC")
+    Page<Expense> findByUserId(@Param("userId") Long userId, Pageable pageable);
+    
+    /**
+     * Find expense by ID and verify ownership
+     */
+    @Query("SELECT e FROM Expense e WHERE e.expenseId = :expenseId AND e.user.userId = :userId")
+    Optional<Expense> findByIdAndUserId(@Param("expenseId") Long expenseId, @Param("userId") Long userId);
+    
+    /**
+     * Find expenses within date range
+     */
+    @Query("SELECT e FROM Expense e WHERE e.user.userId = :userId " +
+           "AND e.expenseDate BETWEEN :startDate AND :endDate ORDER BY e.expenseDate DESC")
+    Page<Expense> findByUserIdAndDateBetween(@Param("userId") Long userId,
+                                              @Param("startDate") LocalDate startDate,
+                                              @Param("endDate") LocalDate endDate,
+                                              Pageable pageable);
+    
+    /**
+     * Find expenses by category
+     */
+    @Query("SELECT e FROM Expense e WHERE e.user.userId = :userId " +
+           "AND e.category.categoryId = :categoryId ORDER BY e.expenseDate DESC")
+    Page<Expense> findByUserIdAndCategoryId(@Param("userId") Long userId,
+                                             @Param("categoryId") Long categoryId,
+                                             Pageable pageable);
+    
+    /**
+     * Find expenses by receipt
+     */
+    @Query("SELECT e FROM Expense e WHERE e.user.userId = :userId " +
+           "AND e.receipt.receiptId = :receiptId")
+    List<Expense> findByUserIdAndReceiptId(@Param("userId") Long userId, @Param("receiptId") Long receiptId);
+    
+    /**
+     * Calculate total expense for a user in date range
+     */
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e " +
+           "WHERE e.user.userId = :userId AND e.expenseDate BETWEEN :startDate AND :endDate")
+    BigDecimal getTotalByUserIdAndDateBetween(@Param("userId") Long userId,
+                                               @Param("startDate") LocalDate startDate,
+                                               @Param("endDate") LocalDate endDate);
+    
+    /**
+     * Get monthly totals for a year
+     */
+    @Query("SELECT FUNCTION('MONTH', e.expenseDate), SUM(e.amount) " +
+           "FROM Expense e WHERE e.user.userId = :userId " +
+           "AND FUNCTION('YEAR', e.expenseDate) = :year " +
+           "GROUP BY FUNCTION('MONTH', e.expenseDate) " +
+           "ORDER BY FUNCTION('MONTH', e.expenseDate)")
+    List<Object[]> getMonthlyTotals(@Param("userId") Long userId, @Param("year") int year);
+    
+    /**
+     * Get category-wise totals for a period
+     */
+    @Query("SELECT e.category.categoryId, e.category.name, e.category.color, SUM(e.amount) " +
+           "FROM Expense e WHERE e.user.userId = :userId " +
+           "AND e.expenseDate BETWEEN :startDate AND :endDate " +
+           "GROUP BY e.category.categoryId, e.category.name, e.category.color " +
+           "ORDER BY SUM(e.amount) DESC")
+    List<Object[]> getCategoryTotals(@Param("userId") Long userId,
+                                      @Param("startDate") LocalDate startDate,
+                                      @Param("endDate") LocalDate endDate);
+    
+    /**
+     * Count expenses for a user
+     */
+    @Query("SELECT COUNT(e) FROM Expense e WHERE e.user.userId = :userId")
+    long countByUserId(@Param("userId") Long userId);
+    
+    /**
+     * Check if any expenses are linked to a receipt
+     */
+    @Query("SELECT COUNT(e) > 0 FROM Expense e WHERE e.receipt.receiptId = :receiptId")
+    boolean existsByReceiptId(@Param("receiptId") Long receiptId);
+    
+    /**
+     * Find expenses by date range (list version) with eager fetch
+     */
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category LEFT JOIN FETCH e.user WHERE e.user.userId = :userId " +
+           "AND e.expenseDate BETWEEN :startDate AND :endDate ORDER BY e.expenseDate DESC")
+    List<Expense> findByUserIdAndExpenseDateBetween(@Param("userId") Long userId,
+                                                     @Param("startDate") LocalDate startDate,
+                                                     @Param("endDate") LocalDate endDate);
+    
+    /**
+     * Find expenses by category (list version) with eager fetch
+     */
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category LEFT JOIN FETCH e.user WHERE e.user.userId = :userId " +
+           "AND e.category.categoryId = :categoryId ORDER BY e.expenseDate DESC")
+    List<Expense> findByUserIdAndCategoryId(@Param("userId") Long userId,
+                                             @Param("categoryId") Long categoryId);
+    
+    /**
+     * Count expenses for a user in date range
+     */
+    @Query("SELECT COUNT(e) FROM Expense e WHERE e.user.userId = :userId " +
+           "AND e.expenseDate BETWEEN :startDate AND :endDate")
+    long countByUserIdAndExpenseDateBetween(@Param("userId") Long userId,
+                                             @Param("startDate") LocalDate startDate,
+                                             @Param("endDate") LocalDate endDate);
+    
+    /**
+     * Check if any expenses exist for a category
+     */
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Expense e " +
+           "WHERE e.user.userId = :userId AND e.category.categoryId = :categoryId")
+    boolean existsByUserIdAndCategoryId(@Param("userId") Long userId, @Param("categoryId") Long categoryId);
+}

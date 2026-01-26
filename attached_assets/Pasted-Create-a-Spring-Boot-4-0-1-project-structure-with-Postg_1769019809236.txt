@@ -1,0 +1,226 @@
+Create a Spring Boot 4.0.1 project structure with PostgreSQL database from the start:
+
+Project Details:
+- Group: com.budget
+- Artifact: easy-budget-book
+- Name: Easy Budget Book
+- Java Version: 17
+- Build Tool: Maven
+- Database: PostgreSQL (NOT H2)
+
+Directory Structure:
+easy-budget-book/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── budget/
+│   │   │           └── easybook/
+│   │   │               ├── EasyBudgetApplication.java
+│   │   │               ├── config/
+│   │   │               ├── auth/
+│   │   │               │   ├── controller/
+│   │   │               │   ├── service/
+│   │   │               │   ├── repository/
+│   │   │               │   └── entity/
+│   │   │               ├── income/
+│   │   │               │   ├── controller/
+│   │   │               │   ├── service/
+│   │   │               │   ├── repository/
+│   │   │               │   └── entity/
+│   │   │               ├── expense/
+│   │   │               │   ├── controller/
+│   │   │               │   ├── service/
+│   │   │               │   ├── repository/
+│   │   │               │   └── entity/
+│   │   │               ├── receipt/
+│   │   │               │   ├── controller/
+│   │   │               │   ├── service/
+│   │   │               │   ├── repository/
+│   │   │               │   └── entity/
+│   │   │               ├── excel/
+│   │   │               │   ├── controller/
+│   │   │               │   ├── service/
+│   │   │               │   └── dto/
+│   │   │               ├── category/
+│   │   │               │   ├── controller/
+│   │   │               │   ├── service/
+│   │   │               │   ├── repository/
+│   │   │               │   └── entity/
+│   │   │               └── statistics/
+│   │   │                   ├── controller/
+│   │   │                   ├── service/
+│   │   │                   └── dto/
+│   │   └── resources/
+│   │       ├── application.yml
+│   │       └── static/
+│   └── test/
+│       └── java/
+├── pom.xml
+└── .gitignore
+
+Main Application Class (EasyBudgetApplication.java):
+package com.budget.easybook;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class EasyBudgetApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EasyBudgetApplication.class, args);
+    }
+}
+
+pom.xml content:
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.1</version>
+        <relativePath/>
+    </parent>
+    
+    <groupId>com.budget</groupId>
+    <artifactId>easy-budget-book</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>Easy Budget Book</name>
+    <description>Personal budget management application</description>
+    
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    
+    <dependencies>
+        <!-- Spring Boot Web (Embedded Tomcat) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <!-- Spring Data JPA -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        
+        <!-- PostgreSQL Driver - IMPORTANT: Use PostgreSQL, NOT H2 -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        
+        <!-- Validation -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        
+        <!-- Spring Boot DevTools (Optional for development) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>17</source>
+                    <target>17</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+Important Notes:
+1. DO NOT include H2 database dependency
+2. ONLY use PostgreSQL driver
+3. Create all package directories as shown
+4. Leave entity, service, controller, repository packages empty for now
+5. Ensure proper Maven structure
+6. Use Java 17 as specified
+
+Create .gitignore file:
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/
+mvnw
+mvnw.cmd
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+### VS Code ###
+.vscode/
+
+### Mac ###
+.DS_Store
+
+### Replit ###
+.replit
+replit.nix

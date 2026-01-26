@@ -1,0 +1,131 @@
+Create a test controller to verify services work:
+
+Location: src/main/java/com/budget/easybook/config/ServiceTestController.java
+
+Code:
+package com.budget.easybook.config;
+
+import com.budget.easybook.auth.entity.User;
+import com.budget.easybook.auth.repository.UserRepository;
+import com.budget.easybook.category.dto.CategoryCreateDTO;
+import com.budget.easybook.category.dto.CategoryDTO;
+import com.budget.easybook.category.service.CategoryService;
+import com.budget.easybook.income.dto.IncomeCreateDTO;
+import com.budget.easybook.income.dto.IncomeDTO;
+import com.budget.easybook.income.service.IncomeService;
+import com.budget.easybook.expense.dto.ExpenseCreateDTO;
+import com.budget.easybook.expense.dto.ExpenseDTO;
+import com.budget.easybook.expense.service.ExpenseService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/test")
+public class ServiceTestController {
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private CategoryService categoryService;
+    
+    @Autowired
+    private IncomeService incomeService;
+    
+    @Autowired
+    private ExpenseService expenseService;
+    
+    @PostMapping("/service-flow")
+    public Map<String, Object> testServiceFlow() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // 1. Create test user
+            User user = new User();
+            user.setEmail("test@example.com");
+            user.setName("Test User");
+            user.setProvider("test");
+            user.setProviderId("test123");
+            User savedUser = userRepository.save(user);
+            result.put("userCreated", true);
+            result.put("userId", savedUser.getUserId());
+            
+            Long userId = savedUser.getUserId();
+            
+            // 2. Create default categories
+            List<CategoryDTO> categories = categoryService.createDefaultCategories(userId);
+            result.put("categoriesCreated", categories.size());
+            result.put("categories", categories);
+            
+            // 3. Get first income category
+            CategoryDTO incomeCategory = categories.stream()
+                    .filter(c -> "income".equals(c.getType()))
+                    .findFirst()
+                    .orElse(null);
+            
+            // 4. Create an income
+            if (incomeCategory != null) {
+                IncomeCreateDTO incomeDTO = new IncomeCreateDTO();
+                incomeDTO.setCategoryId(incomeCategory.getCategoryId());
+                incomeDTO.setAmount(new BigDecimal("3000000"));
+                incomeDTO.setDescription("Test income - salary");
+                incomeDTO.setIncomeDate(LocalDate.now());
+                
+                IncomeDTO createdIncome = incomeService.createIncome(userId, incomeDTO);
+                result.put("incomeCreated", true);
+                result.put("income", createdIncome);
+            }
+            
+            // 5. Get first expense category
+            CategoryDTO expenseCategory = categories.stream()
+                    .filter(c -> "expense".equals(c.getType()))
+                    .findFirst()
+                    .orElse(null);
+            
+            // 6. Create an expense
+            if (expenseCategory != null) {
+                ExpenseCreateDTO expenseDTO = new ExpenseCreateDTO();
+                expenseDTO.setCategoryId(expenseCategory.getCategoryId());
+                expenseDTO.setAmount(new BigDecimal("50000"));
+                expenseDTO.setDescription("Test expense - food");
+                expenseDTO.setExpenseDate(LocalDate.now());
+                
+                ExpenseDTO createdExpense = expenseService.createExpense(userId, expenseDTO);
+                result.put("expenseCreated", true);
+                result.put("expense", createdExpense);
+            }
+            
+            // 7. Get totals
+            result.put("incomeTotal", incomeService.getMonthlyTotal(userId, 
+                    LocalDate.now().getYear(), LocalDate.now().getMonthValue()));
+            result.put("expenseTotal", expenseService.getMonthlyTotal(userId,
+                    LocalDate.now().getYear(), LocalDate.now().getMonthValue()));
+            
+            // 8. Clean up
+            userRepository.delete(savedUser);
+            result.put("cleanedUp", true);
+            
+            result.put("status", "SUCCESS");
+            
+        } catch (Exception e) {
+            result.put("status", "FAILED");
+            result.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return result;
+    }
+}
+
+Important Notes:
+1. Complete workflow test
+2. Creates user → categories → income → expense
+3. Tests relationships and validations
+4. Cleans up after test
+5. Returns detailed result for verification

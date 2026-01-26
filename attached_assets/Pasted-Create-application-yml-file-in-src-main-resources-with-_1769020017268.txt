@@ -1,0 +1,113 @@
+Create application.yml file in src/main/resources/ with PostgreSQL configuration:
+
+File: src/main/resources/application.yml
+
+Content:
+server:
+  port: 8080
+  tomcat:
+    threads:
+      max: 100
+      min-spare: 10
+    connection-timeout: 20000
+    accept-count: 100
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+spring:
+  application:
+    name: easy-budget-book
+    
+  # PostgreSQL Database Configuration
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/budget_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+    
+  # JPA/Hibernate Configuration for PostgreSQL
+  jpa:
+    hibernate:
+      ddl-auto: update  # Options: none, validate, update, create, create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        default_schema: public
+        temp:
+          use_jdbc_metadata_defaults: false
+    open-in-view: false
+    
+  # Multipart File Upload Configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+      file-size-threshold: 2KB
+      
+  # CORS Configuration (for development)
+  web:
+    cors:
+      allowed-origins: "*"
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.budget.easybook: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator Configuration (Optional)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+Important Notes:
+1. Database connection uses environment variables with fallback defaults
+2. Hibernate ddl-auto is set to 'update' for development (will auto-create tables)
+3. PostgreSQL dialect is explicitly specified
+4. Connection pooling configured with HikariCP
+5. SQL logging enabled for development
+6. File upload size limited to 10MB
+7. CORS enabled for development (restrict in production)
+
+Environment Variables to set (in Replit Secrets or .env):
+- DATABASE_URL: Full JDBC PostgreSQL connection URL
+- DB_USERNAME: PostgreSQL username
+- DB_PASSWORD: PostgreSQL password
+
+Example values for Replit:
+DATABASE_URL=jdbc:postgresql://your-db-host:5432/budget_db
+DB_USERNAME=postgres
+DB_PASSWORD=your-secure-password
+
+For Replit PostgreSQL Add-on:
+The DATABASE_URL will be automatically provided by Replit.

@@ -1,0 +1,71 @@
+package com.budget.easybook.config;
+
+import com.budget.easybook.auth.entity.User;
+import com.budget.easybook.auth.repository.UserRepository;
+import com.budget.easybook.category.repository.CategoryRepository;
+import com.budget.easybook.expense.repository.ExpenseRepository;
+import com.budget.easybook.income.repository.IncomeRepository;
+import com.budget.easybook.receipt.repository.ReceiptRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/test")
+public class RepositoryTestController {
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private CategoryRepository categoryRepository;
+    
+    @Autowired
+    private IncomeRepository incomeRepository;
+    
+    @Autowired
+    private ExpenseRepository expenseRepository;
+    
+    @Autowired
+    private ReceiptRepository receiptRepository;
+    
+    @GetMapping("/repositories")
+    public Map<String, Object> testRepositories() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // Test basic count operations
+            result.put("status", "SUCCESS");
+            result.put("userCount", userRepository.count());
+            result.put("categoryCount", categoryRepository.count());
+            result.put("incomeCount", incomeRepository.count());
+            result.put("expenseCount", expenseRepository.count());
+            result.put("receiptCount", receiptRepository.count());
+            
+            // Test creating a test user
+            User testUser = new User();
+            testUser.setEmail("test@example.com");
+            testUser.setName("Test User");
+            testUser.setProvider("test");
+            testUser.setProviderId("test123");
+            
+            User savedUser = userRepository.save(testUser);
+            result.put("testUserCreated", savedUser.getUserId() != null);
+            result.put("testUserId", savedUser.getUserId());
+            
+            // Clean up test user
+            userRepository.delete(savedUser);
+            result.put("testUserDeleted", true);
+            
+        } catch (Exception e) {
+            result.put("status", "FAILED");
+            result.put("error", e.getMessage());
+        }
+        
+        return result;
+    }
+}

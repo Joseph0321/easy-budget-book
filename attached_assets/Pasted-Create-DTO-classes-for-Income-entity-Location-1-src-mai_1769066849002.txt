@@ -1,0 +1,94 @@
+Create DTO classes for Income entity:
+
+Location 1: src/main/java/com/budget/easybook/income/dto/IncomeDTO.java
+
+package com.budget.easybook.income.dto;
+
+import com.budget.easybook.category.dto.CategoryDTO;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class IncomeDTO {
+    private Long incomeId;
+    private Long userId;
+    private Long categoryId;
+    private String categoryName;
+    private String categoryColor;
+    private BigDecimal amount;
+    private String description;
+    private LocalDate incomeDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}
+
+Location 2: src/main/java/com/budget/easybook/income/dto/IncomeCreateDTO.java
+
+package com.budget.easybook.income.dto;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class IncomeCreateDTO {
+    
+    @NotNull(message = "Category is required")
+    private Long categoryId;
+    
+    @NotNull(message = "Amount is required")
+    @Positive(message = "Amount must be positive")
+    private BigDecimal amount;
+    
+    private String description;
+    
+    @NotNull(message = "Income date is required")
+    private LocalDate incomeDate;
+}
+
+Location 3: src/main/java/com/budget/easybook/income/dto/IncomeUpdateDTO.java
+
+package com.budget.easybook.income.dto;
+
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class IncomeUpdateDTO {
+    
+    private Long categoryId;
+    
+    @Positive(message = "Amount must be positive")
+    private BigDecimal amount;
+    
+    private String description;
+    
+    private LocalDate incomeDate;
+}
+
+Important Notes:
+1. IncomeDTO includes category name and color for display
+2. BigDecimal for money amounts (never use float/double for money)
+3. LocalDate for dates without time
+4. Validation ensures business rules

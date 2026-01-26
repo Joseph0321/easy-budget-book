@@ -1,0 +1,248 @@
+<template>
+  <div class="transaction-list">
+    <el-card>
+      <template #header>
+        <div class="header-toolbar">
+          <h2>거래 내역</h2>
+          <div class="actions">
+            <el-button type="success" @click="showAddDialog">
+              + 추가
+            </el-button>
+            <el-button @click="handleExport">
+              Excel 다운로드
+            </el-button>
+            <el-upload
+              :auto-upload="false"
+              :on-change="handleImport"
+              :show-file-list="false"
+              accept=".xlsx,.xls"
+            >
+              <el-button>Excel 업로드</el-button>
+            </el-upload>
+          </div>
+        </div>
+      </template>
+
+      <!-- 필터 -->
+      <el-form :inline="true" class="filter-form">
+        <el-form-item label="기간">
+          <el-date-picker
+            v-model="dateRange"
+            type="daterange"
+            range-separator="~"
+            start-placeholder="시작일"
+            end-placeholder="종료일"
+            @change="loadTransactions"
+          />
+        </el-form-item>
+        <el-form-item label="구분">
+          <el-select v-model="filterType" @change="loadTransactions">
+            <el-option label="전체" value="ALL" />
+            <el-option label="수입" value="INCOME" />
+            <el-option label="지출" value="EXPENSE" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="카테고리">
+          <el-select v-model="filterCategory" @change="loadTransactions">
+            <el-option label="전체" :value="null" />
+            <el-option
+              v-for="cat in categories"
+              :key="cat.id"
+              :label="cat.name"
+              :value="cat.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+
+      <!-- 거래 테이블 -->
+      <el-table :data="transactions" stripe>
+        <el-table-column prop="transactionDate" label="날짜" width="120">
+          <template #default="{ row }">
+            {{ formatDate(row.transactionDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="type" label="구분" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.type === 'INCOME' ? 'success' : 'danger'">
+              {{ row.type === 'INCOME' ? '수입' : '지출' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="category.name" label="카테고리" width="120" />
+        <el-table-column prop="amount" label="금액" width="150" align="right">
+          <template #default="{ row }">
+            {{ formatCurrency(row.amount) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="paymentMethod" label="결제수단" width="100" />
+        <el-table-column prop="memo" label="메모" />
+        <el-table-column label="작업" width="150" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" @click="editTransaction(row)">
+              수정
+            </el-button>
+            <el-button 
+              size="small" 
+              type="danger"
+              @click="deleteTransaction(row.id)"
+            >
+              삭제
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 페이지네이션 -->
+      <el-pagination
+        v-model:current-page="currentPage"
+        :page-size="pageSize"
+        :total="total"
+        layout="total, prev, pager, next"
+        @current-change="loadTransactions"
+      />
+    </el-card>
+
+    <!-- 추가/수정 다이얼로그 -->
+    <TransactionForm
+      v-model="dialogVisible"
+      :transaction="selectedTransaction"
+      :categories="categories"
+      @save="handleSave"
+    />
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import transactionService from '@/services/transactionService';
+import categoryService from '@/services/categoryService';
+import TransactionForm from '@/components/TransactionForm.vue';
+import dayjs from 'dayjs';
+import { saveAs } from 'file-saver';
+
+// 데이터
+const transactions = ref([]);
+const categories = ref([]);
+const dateRange = ref([
+  dayjs().startOf('month').toDate(),
+  dayjs().endOf('month').toDate()
+]);
+const filterType = ref('ALL');
+const filterCategory = ref(null);
+const currentPage = ref(1);
+const pageSize = ref(20);
+const total = ref(0);
+
+// 다이얼로그
+const dialogVisible = ref(false);
+const selectedTransaction = ref(null);
+
+// 데이터 로딩
+const loadTransactions = async () => {
+  try {
+    const [start, end] = dateRange.value;
+    const res = await transactionService.getTransactionsByPeriod(
+      dayjs(start).format('YYYY-MM-DD'),
+      dayjs(end).format('YYYY-MM-DD')
+    );
+    
+    let filtered = res.data;
+    if (filterType.value !== 'ALL') {
+      filtered = filtered.filter(t => t.type === filterType.value);
+    }
+    if (filterCategory.value) {
+      filtered = filtered.filter(t => t.category.id === filterCategory.value);
+    }
+    
+    transactions.value = filtered;
+    total.value = filtered.length;
+  } catch (error) {
+    ElMessage.error('거래 내역을 불러오는데 실패했습니다.');
+  }
+};
+
+const loadCategories = async () => {
+  try {
+    const res = await categoryService.getCategories();
+    categories.value = res.data;
+  } catch (error) {
+    ElMessage.error('카테고리를 불러오는데 실패했습니다.');
+  }
+};
+
+// 추가/수정
+const showAddDialog = () => {
+  selectedTransaction.value = null;
+  dialogVisible.value = true;
+};
+
+const editTransaction = (transaction) => {
+  selectedTransaction.value = { ...transaction };
+  dialogVisible.value = true;
+};
+
+const handleSave = async () => {
+  dialogVisible.value = false;
+  await loadTransactions();
+  ElMessage.success('저장되었습니다.');
+};
+
+// 삭제
+const deleteTransaction = async (id) => {
+  try {
+    await ElMessageBox.confirm('정말 삭제하시겠습니까?', '확인', {
+      type: 'warning'
+    });
+    
+    await transactionService.deleteTransaction(id);
+    await loadTransactions();
+    ElMessage.success('삭제되었습니다.');
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('삭제에 실패했습니다.');
+    }
+  }
+};
+
+// Excel Export/Import
+const handleExport = async () => {
+  try {
+    const [start, end] = dateRange.value;
+    const res = await transactionService.exportToExcel(
+      dayjs(start).format('YYYY-MM-DD'),
+      dayjs(end).format('YYYY-MM-DD')
+    );
+    
+    const blob = new Blob([res.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `transactions_${dayjs().format('YYYYMMDD')}.xlsx`);
+    ElMessage.success('Excel 파일이 다운로드되었습니다.');
+  } catch (error) {
+    ElMessage.error('Excel 다운로드에 실패했습니다.');
+  }
+};
+
+const handleImport = async (file) => {
+  try {
+    const res = await transactionService.importFromExcel(file.raw);
+    ElMessage.success(`${res.data.successCount}건이 등록되었습니다.`);
+    await loadTransactions();
+  } catch (error) {
+    ElMessage.error('Excel 업로드에 실패했습니다.');
+  }
+};
+
+// 유틸리티
+const formatDate = (date) => dayjs(date).format('YYYY-MM-DD');
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('ko-KR').format(amount) + '원';
+};
+
+onMounted(() => {
+  loadCategories();
+  loadTransactions();
+});
+</script>

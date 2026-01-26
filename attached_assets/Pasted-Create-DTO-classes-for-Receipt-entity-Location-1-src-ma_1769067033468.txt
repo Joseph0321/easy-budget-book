@@ -1,0 +1,91 @@
+Create DTO classes for Receipt entity:
+
+Location 1: src/main/java/com/budget/easybook/receipt/dto/ReceiptDTO.java
+
+package com.budget.easybook.receipt.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ReceiptDTO {
+    private Long receiptId;
+    private Long userId;
+    private String imageUrl;
+    private String originalFilename;
+    private ReceiptOCRResult ocrResult;
+    private LocalDateTime processedAt;
+    private boolean hasLinkedExpenses; // Whether any expenses are linked
+}
+
+Location 2: src/main/java/com/budget/easybook/receipt/dto/ReceiptOCRResult.java
+
+package com.budget.easybook.receipt.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ReceiptOCRResult {
+    private String storeName;
+    private LocalDate date;
+    private List<ReceiptItem> items;
+    private BigDecimal totalAmount;
+    private String currency;
+}
+
+Location 3: src/main/java/com/budget/easybook/receipt/dto/ReceiptItem.java
+
+package com.budget.easybook.receipt.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ReceiptItem {
+    private String itemName;
+    private Integer quantity;
+    private BigDecimal unitPrice;
+    private BigDecimal amount;
+}
+
+Location 4: src/main/java/com/budget/easybook/receipt/dto/ReceiptUploadDTO.java
+
+package com.budget.easybook.receipt.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ReceiptUploadDTO {
+    private Long receiptId;
+    private String imageUrl;
+    private String message;
+    private boolean processed;
+}
+
+Important Notes:
+1. ReceiptOCRResult: Structured OCR data
+2. ReceiptItem: Individual items from receipt
+3. Separate DTOs for different use cases
+4. Will be converted to/from JSON for database storage

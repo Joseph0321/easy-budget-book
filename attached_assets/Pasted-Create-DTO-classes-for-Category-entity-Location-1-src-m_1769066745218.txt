@@ -1,0 +1,84 @@
+Create DTO classes for Category entity:
+
+Location 1: src/main/java/com/budget/easybook/category/dto/CategoryDTO.java
+
+package com.budget.easybook.category.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CategoryDTO {
+    private Long categoryId;
+    private Long userId;
+    private String name;
+    private String type; // income or expense
+    private String color;
+    private String icon;
+    private LocalDateTime createdAt;
+}
+
+Location 2: src/main/java/com/budget/easybook/category/dto/CategoryCreateDTO.java
+
+package com.budget.easybook.category.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CategoryCreateDTO {
+    
+    @NotBlank(message = "Category name is required")
+    private String name;
+    
+    @NotBlank(message = "Type is required")
+    @Pattern(regexp = "income|expense", message = "Type must be 'income' or 'expense'")
+    private String type;
+    
+    @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color must be valid hex code (e.g., #4CAF50)")
+    private String color;
+    
+    private String icon;
+}
+
+Location 3: src/main/java/com/budget/easybook/category/dto/CategoryUpdateDTO.java
+
+package com.budget.easybook.category.dto;
+
+import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CategoryUpdateDTO {
+    
+    private String name;
+    
+    @Pattern(regexp = "income|expense", message = "Type must be 'income' or 'expense'")
+    private String type;
+    
+    @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color must be valid hex code")
+    private String color;
+    
+    private String icon;
+}
+
+Important Notes:
+1. CategoryDTO: Full data for responses
+2. CategoryCreateDTO: For creating new categories with validation
+3. CategoryUpdateDTO: For updates, all fields optional
+4. Validation annotations ensure data integrity
+5. Separate DTOs follow best practices (don't expose entity directly)

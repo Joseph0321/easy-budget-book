@@ -1,0 +1,98 @@
+Create DTO classes for Expense entity (similar to Income):
+
+Location 1: src/main/java/com/budget/easybook/expense/dto/ExpenseDTO.java
+
+package com.budget.easybook.expense.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ExpenseDTO {
+    private Long expenseId;
+    private Long userId;
+    private Long categoryId;
+    private String categoryName;
+    private String categoryColor;
+    private BigDecimal amount;
+    private String description;
+    private LocalDate expenseDate;
+    private Long receiptId;
+    private String receiptImageUrl;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}
+
+Location 2: src/main/java/com/budget/easybook/expense/dto/ExpenseCreateDTO.java
+
+package com.budget.easybook.expense.dto;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ExpenseCreateDTO {
+    
+    @NotNull(message = "Category is required")
+    private Long categoryId;
+    
+    @NotNull(message = "Amount is required")
+    @Positive(message = "Amount must be positive")
+    private BigDecimal amount;
+    
+    private String description;
+    
+    @NotNull(message = "Expense date is required")
+    private LocalDate expenseDate;
+    
+    private Long receiptId; // Optional: link to receipt
+}
+
+Location 3: src/main/java/com/budget/easybook/expense/dto/ExpenseUpdateDTO.java
+
+package com.budget.easybook.expense.dto;
+
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ExpenseUpdateDTO {
+    
+    private Long categoryId;
+    
+    @Positive(message = "Amount must be positive")
+    private BigDecimal amount;
+    
+    private String description;
+    
+    private LocalDate expenseDate;
+    
+    private Long receiptId;
+}
+
+Important Notes:
+1. Same structure as Income DTOs
+2. Additional fields: receiptId and receiptImageUrl
+3. Receipt linkage is optional

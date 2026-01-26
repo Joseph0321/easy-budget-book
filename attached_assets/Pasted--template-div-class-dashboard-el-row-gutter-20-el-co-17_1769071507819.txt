@@ -1,0 +1,107 @@
+<template>
+  <div class="dashboard">
+    <el-row :gutter="20">
+      <!-- 요약 카드 -->
+      <el-col :span="8">
+        <el-card class="summary-card income">
+          <div class="card-header">이번 달 수입</div>
+          <div class="amount">{{ formatCurrency(monthlyIncome) }}</div>
+        </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card class="summary-card expense">
+          <div class="card-header">이번 달 지출</div>
+          <div class="amount">{{ formatCurrency(monthlyExpense) }}</div>
+        </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card class="summary-card balance">
+          <div class="card-header">잔액</div>
+          <div class="amount">{{ formatCurrency(balance) }}</div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 최근 거래 내역 -->
+    <el-card class="recent-transactions">
+      <template #header>
+        <div class="card-header">
+          <span>최근 거래</span>
+          <el-button type="primary" @click="goToTransactions">
+            전체보기
+          </el-button>
+        </div>
+      </template>
+      <TransactionTable 
+        :transactions="recentTransactions" 
+        :limit="5"
+      />
+    </el-card>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import transactionService from '@/services/transactionService';
+import TransactionTable from '@/components/TransactionTable.vue';
+import dayjs from 'dayjs';
+
+const router = useRouter();
+const recentTransactions = ref([]);
+const monthlyIncome = ref(0);
+const monthlyExpense = ref(0);
+
+const balance = computed(() => monthlyIncome.value - monthlyExpense.value);
+
+const loadDashboardData = async () => {
+  try {
+    const today = dayjs();
+    const year = today.year();
+    const month = today.month() + 1;
+    
+    // 월별 요약 데이터
+    const summaryRes = await transactionService.getMonthlySummary(year, month);
+    monthlyIncome.value = summaryRes.data.totalIncome;
+    monthlyExpense.value = summaryRes.data.totalExpense;
+    
+    // 최근 거래 5건
+    const startDate = today.startOf('month').format('YYYY-MM-DD');
+    const endDate = today.format('YYYY-MM-DD');
+    const transRes = await transactionService.getTransactionsByPeriod(startDate, endDate);
+    recentTransactions.value = transRes.data.slice(0, 5);
+  } catch (error) {
+    console.error('Dashboard 데이터 로딩 실패:', error);
+  }
+};
+
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('ko-KR', {
+    style: 'currency',
+    currency: 'KRW'
+  }).format(amount);
+};
+
+const goToTransactions = () => {
+  router.push('/transactions');
+};
+
+onMounted(() => {
+  loadDashboardData();
+});
+</script>
+
+<style scoped>
+.summary-card {
+  text-align: center;
+  padding: 20px;
+}
+.summary-card .amount {
+  font-size: 28px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+.income .amount { color: #67C23A; }
+.expense .amount { color: #F56C6C; }
+.balance .amount { color: #409EFF; }
+</style>

@@ -1,0 +1,167 @@
+Create ExpenseService class (similar to IncomeService):
+
+Location: src/main/java/com/budget/easybook/expense/service/ExpenseService.java
+
+Code:
+package com.budget.easybook.expense.service;
+
+import com.budget.easybook.auth.entity.User;
+import com.budget.easybook.auth.repository.UserRepository;
+import com.budget.easybook.category.entity.Category;
+import com.budget.easybook.category.repository.CategoryRepository;
+import com.budget.easybook.expense.dto.ExpenseCreateDTO;
+import com.budget.easybook.expense.dto.ExpenseDTO;
+import com.budget.easybook.expense.dto.ExpenseMapper;
+import com.budget.easybook.expense.dto.ExpenseUpdateDTO;
+import com.budget.easybook.expense.entity.Expense;
+import com.budget.easybook.expense.repository.ExpenseRepository;
+import com.budget.easybook.receipt.entity.Receipt;
+import com.budget.easybook.receipt.repository.ReceiptRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Service
+@Transactional
+public class ExpenseService {
+    
+    @Autowired
+    private ExpenseRepository expenseRepository;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private CategoryRepository categoryRepository;
+    
+    @Autowired
+    private ReceiptRepository receiptRepository;
+    
+    /**
+     * Get expenses with filters and pagination
+     */
+    public Page<ExpenseDTO> getExpenses(Long userId, LocalDate startDate, LocalDate endDate,
+                                         Long categoryId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("expenseDate").descending());
+        Page<Expense> expensePage;
+        
+        if (startDate != null && endDate != null) {
+            if (categoryId != null) {
+                expensePage = expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate, pageable);
+            } else {
+                expensePage = expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate, pageable);
+            }
+        } else if (categoryId != null) {
+            expensePage = expenseRepository.findByUserIdAndCategoryId(userId, categoryId, pageable);
+        } else {
+            expensePage = expenseRepository.findByUserId(userId, pageable);
+        }
+        
+        return expensePage.map(ExpenseMapper::toDTO);
+    }
+    
+    /**
+     * Get single expense
+     */
+    public ExpenseDTO getExpense(Long userId, Long expenseId) {
+        Expense expense = expenseRepository.findByIdAndUserId(expenseId, userId)
+                .orElseThrow(() -> new RuntimeException("Expense not found or unauthorized"));
+        
+        return ExpenseMapper.toDTO(expense);
+    }
+    
+    /**
+     * Create new expense
+     */
+    public ExpenseDTO createExpense(Long userId, ExpenseCreateDTO dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Category category = categoryRepository.findByIdAndUserId(dto.getCategoryId(), userId)
+                .orElseThrow(() -> new RuntimeException("Category not found or unauthorized"));
+        
+        if (!"expense".equals(category.getType())) {
+            throw new RuntimeException("Category must be of type 'expense'");
+        }
+        
+        Receipt receipt = null;
+        if (dto.getReceiptId() != null) {
+            receipt = receiptRepository.findByIdAndUserId(dto.getReceiptId(), userId)
+                    .orElseThrow(() -> new RuntimeException("Receipt not found or unauthorized"));
+        }
+        
+        Expense expense = ExpenseMapper.toEntity(dto, user, category, receipt);
+        Expense saved = expenseRepository.save(expense);
+        
+        return ExpenseMapper.toDTO(saved);
+    }
+    
+    /**
+     * Update expense
+     */
+    public ExpenseDTO updateExpense(Long userId, Long expenseId, ExpenseUpdateDTO dto) {
+        Expense expense = expenseRepository.findByIdAndUserId(expenseId, userId)
+                .orElseThrow(() -> new RuntimeException("Expense not found or unauthorized"));
+        
+        Category category = null;
+        if (dto.getCategoryId() != null) {
+            category = categoryRepository.findByIdAndUserId(dto.getCategoryId(), userId)
+                    .orElseThrow(() -> new RuntimeException("Category not found or unauthorized"));
+            
+            if (!"expense".equals(category.getType())) {
+                throw new RuntimeException("Category must be of type 'expense'");
+            }
+        }
+        
+        Receipt receipt = null;
+        if (dto.getReceiptId() != null) {
+            receipt = receiptRepository.findByIdAndUserId(dto.getReceiptId(), userId)
+                    .orElseThrow(() -> new RuntimeException("Receipt not found or unauthorized"));
+        }
+        
+        ExpenseMapper.updateEntity(expense, dto, category, receipt);
+        Expense updated = expenseRepository.save(expense);
+        
+        return ExpenseMapper.toDTO(updated);
+    }
+    
+    /**
+     * Delete expense
+     */
+    public void deleteExpense(Long userId, Long expenseId) {
+        Expense expense = expenseRepository.findByIdAndUserId(expenseId, userId)
+                .orElseThrow(() -> new RuntimeException("Expense not found or unauthorized"));
+        
+        expenseRepository.delete(expense);
+    }
+    
+    /**
+     * Get monthly total
+     */
+    public BigDecimal getMonthlyTotal(Long userId, int year, int month) {
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.plusMonths(1).minusDays(1);
+        
+        return expenseRepository.getTotalByUserIdAndDateBetween(userId, startDate, endDate);
+    }
+    
+    /**
+     * Get total count for user
+     */
+    public long getTotalCount(Long userId) {
+        return expenseRepository.countByUserId(userId);
+    }
+}
+
+Important Notes:
+1. Same structure as IncomeService for consistency
+2. Additional receipt validation and linkage
+3. Category type must be 'expense'
+4. Receipt is optional

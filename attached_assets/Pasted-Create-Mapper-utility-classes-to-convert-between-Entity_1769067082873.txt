@@ -1,0 +1,248 @@
+Create Mapper utility classes to convert between Entity and DTO:
+
+Location 1: src/main/java/com/budget/easybook/category/dto/CategoryMapper.java
+
+package com.budget.easybook.category.dto;
+
+import com.budget.easybook.auth.entity.User;
+import com.budget.easybook.category.entity.Category;
+
+public class CategoryMapper {
+    
+    public static CategoryDTO toDTO(Category category) {
+        if (category == null) return null;
+        
+        CategoryDTO dto = new CategoryDTO();
+        dto.setCategoryId(category.getCategoryId());
+        dto.setUserId(category.getUser().getUserId());
+        dto.setName(category.getName());
+        dto.setType(category.getType());
+        dto.setColor(category.getColor());
+        dto.setIcon(category.getIcon());
+        dto.setCreatedAt(category.getCreatedAt());
+        return dto;
+    }
+    
+    public static Category toEntity(CategoryCreateDTO dto, User user) {
+        if (dto == null) return null;
+        
+        Category category = new Category();
+        category.setUser(user);
+        category.setName(dto.getName());
+        category.setType(dto.getType());
+        category.setColor(dto.getColor());
+        category.setIcon(dto.getIcon());
+        return category;
+    }
+    
+    public static void updateEntity(Category category, CategoryUpdateDTO dto) {
+        if (dto.getName() != null) {
+            category.setName(dto.getName());
+        }
+        if (dto.getType() != null) {
+            category.setType(dto.getType());
+        }
+        if (dto.getColor() != null) {
+            category.setColor(dto.getColor());
+        }
+        if (dto.getIcon() != null) {
+            category.setIcon(dto.getIcon());
+        }
+    }
+}
+
+Location 2: src/main/java/com/budget/easybook/income/dto/IncomeMapper.java
+
+package com.budget.easybook.income.dto;
+
+import com.budget.easybook.auth.entity.User;
+import com.budget.easybook.category.entity.Category;
+import com.budget.easybook.income.entity.Income;
+
+public class IncomeMapper {
+    
+    public static IncomeDTO toDTO(Income income) {
+        if (income == null) return null;
+        
+        IncomeDTO dto = new IncomeDTO();
+        dto.setIncomeId(income.getIncomeId());
+        dto.setUserId(income.getUser().getUserId());
+        
+        if (income.getCategory() != null) {
+            dto.setCategoryId(income.getCategory().getCategoryId());
+            dto.setCategoryName(income.getCategory().getName());
+            dto.setCategoryColor(income.getCategory().getColor());
+        }
+        
+        dto.setAmount(income.getAmount());
+        dto.setDescription(income.getDescription());
+        dto.setIncomeDate(income.getIncomeDate());
+        dto.setCreatedAt(income.getCreatedAt());
+        dto.setUpdatedAt(income.getUpdatedAt());
+        return dto;
+    }
+    
+    public static Income toEntity(IncomeCreateDTO dto, User user, Category category) {
+        if (dto == null) return null;
+        
+        Income income = new Income();
+        income.setUser(user);
+        income.setCategory(category);
+        income.setAmount(dto.getAmount());
+        income.setDescription(dto.getDescription());
+        income.setIncomeDate(dto.getIncomeDate());
+        return income;
+    }
+    
+    public static void updateEntity(Income income, IncomeUpdateDTO dto, Category category) {
+        if (dto.getCategoryId() != null && category != null) {
+            income.setCategory(category);
+        }
+        if (dto.getAmount() != null) {
+            income.setAmount(dto.getAmount());
+        }
+        if (dto.getDescription() != null) {
+            income.setDescription(dto.getDescription());
+        }
+        if (dto.getIncomeDate() != null) {
+            income.setIncomeDate(dto.getIncomeDate());
+        }
+    }
+}
+
+Location 3: src/main/java/com/budget/easybook/expense/dto/ExpenseMapper.java
+
+package com.budget.easybook.expense.dto;
+
+import com.budget.easybook.auth.entity.User;
+import com.budget.easybook.category.entity.Category;
+import com.budget.easybook.expense.entity.Expense;
+import com.budget.easybook.receipt.entity.Receipt;
+
+public class ExpenseMapper {
+    
+    public static ExpenseDTO toDTO(Expense expense) {
+        if (expense == null) return null;
+        
+        ExpenseDTO dto = new ExpenseDTO();
+        dto.setExpenseId(expense.getExpenseId());
+        dto.setUserId(expense.getUser().getUserId());
+        
+        if (expense.getCategory() != null) {
+            dto.setCategoryId(expense.getCategory().getCategoryId());
+            dto.setCategoryName(expense.getCategory().getName());
+            dto.setCategoryColor(expense.getCategory().getColor());
+        }
+        
+        dto.setAmount(expense.getAmount());
+        dto.setDescription(expense.getDescription());
+        dto.setExpenseDate(expense.getExpenseDate());
+        
+        if (expense.getReceipt() != null) {
+            dto.setReceiptId(expense.getReceipt().getReceiptId());
+            dto.setReceiptImageUrl(expense.getReceipt().getImageUrl());
+        }
+        
+        dto.setCreatedAt(expense.getCreatedAt());
+        dto.setUpdatedAt(expense.getUpdatedAt());
+        return dto;
+    }
+    
+    public static Expense toEntity(ExpenseCreateDTO dto, User user, Category category, Receipt receipt) {
+        if (dto == null) return null;
+        
+        Expense expense = new Expense();
+        expense.setUser(user);
+        expense.setCategory(category);
+        expense.setAmount(dto.getAmount());
+        expense.setDescription(dto.getDescription());
+        expense.setExpenseDate(dto.getExpenseDate());
+        expense.setReceipt(receipt);
+        return expense;
+    }
+    
+    public static void updateEntity(Expense expense, ExpenseUpdateDTO dto, Category category, Receipt receipt) {
+        if (dto.getCategoryId() != null && category != null) {
+            expense.setCategory(category);
+        }
+        if (dto.getAmount() != null) {
+            expense.setAmount(dto.getAmount());
+        }
+        if (dto.getDescription() != null) {
+            expense.setDescription(dto.getDescription());
+        }
+        if (dto.getExpenseDate() != null) {
+            expense.setExpenseDate(dto.getExpenseDate());
+        }
+        if (dto.getReceiptId() != null) {
+            expense.setReceipt(receipt);
+        }
+    }
+}
+
+Location 4: src/main/java/com/budget/easybook/receipt/dto/ReceiptMapper.java
+
+package com.budget.easybook.receipt.dto;
+
+import com.budget.easybook.auth.entity.User;
+import com.budget.easybook.receipt.entity.Receipt;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+public class ReceiptMapper {
+    
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
+    
+    public static ReceiptDTO toDTO(Receipt receipt, boolean hasLinkedExpenses) {
+        if (receipt == null) return null;
+        
+        ReceiptDTO dto = new ReceiptDTO();
+        dto.setReceiptId(receipt.getReceiptId());
+        dto.setUserId(receipt.getUser().getUserId());
+        dto.setImageUrl(receipt.getImageUrl());
+        dto.setOriginalFilename(receipt.getOriginalFilename());
+        dto.setProcessedAt(receipt.getProcessedAt());
+        dto.setHasLinkedExpenses(hasLinkedExpenses);
+        
+        // Parse JSON string to ReceiptOCRResult
+        if (receipt.getOcrResult() != null) {
+            try {
+                ReceiptOCRResult ocrResult = objectMapper.readValue(
+                    receipt.getOcrResult(), 
+                    ReceiptOCRResult.class
+                );
+                dto.setOcrResult(ocrResult);
+            } catch (JsonProcessingException e) {
+                // Log error and set null
+                dto.setOcrResult(null);
+            }
+        }
+        
+        return dto;
+    }
+    
+    public static Receipt toEntity(String imageUrl, String filename, User user) {
+        Receipt receipt = new Receipt();
+        receipt.setImageUrl(imageUrl);
+        receipt.setOriginalFilename(filename);
+        receipt.setUser(user);
+        return receipt;
+    }
+    
+    public static String ocrResultToJson(ReceiptOCRResult ocrResult) {
+        try {
+            return objectMapper.writeValueAsString(ocrResult);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+}
+
+Important Notes:
+1. Static utility methods for conversion
+2. Null checks to prevent NullPointerException
+3. Separate methods for create, update, and read operations
+4. ObjectMapper for JSON serialization (Receipt OCR)
+5. JavaTimeModule for LocalDate/LocalDateTime support
